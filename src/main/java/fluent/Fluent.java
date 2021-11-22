@@ -1,5 +1,6 @@
 package fluent;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 
@@ -33,4 +34,13 @@ public class Fluent {
             index++;
         }
     }
+
+    public static <T> TernaryOp<T> asking(boolean routeCondition) {
+        return new TernaryOp<>(routeCondition);
+    }
+
+    public static <T> TernaryOp<T> asking(BooleanSupplier routeCondition) {
+        return new TernaryOp<>(routeCondition.getAsBoolean());
+    }
+
 }
