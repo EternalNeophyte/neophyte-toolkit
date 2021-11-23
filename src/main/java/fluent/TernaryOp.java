@@ -1,8 +1,5 @@
 package fluent;
 
-import support.Chaining;
-
-import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -11,51 +8,46 @@ import java.util.function.Supplier;
  *
  * @author alexandrov
  */
-public class TernaryOp<T> implements Chaining<TernaryOp<T>> {
+public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
 
-    private boolean routeCondition;
-    TernaryOp<T> origin;
-    private T result;
-
-    public TernaryOp(boolean routeCondition, TernaryOp<T> origin) {
-        this.routeCondition = routeCondition;
-        this.origin = origin;
+    public TernaryOp(boolean actionAllowed, TernaryOp<V> origin) {
+        super(actionAllowed, origin);
     }
 
-    TernaryOp(boolean routeCondition) {
-        this(routeCondition, null);
+    TernaryOp(boolean actionAllowed) {
+        super(actionAllowed);
     }
 
-    public TernaryOp<T> yes(T value) {
-        return chainingIf(routeCondition, () -> result = value);
+    public TernaryOp<V> yes(V value) {
+        return chainWhen(actionAllowed, () -> this.value = value);
     }
 
-    public TernaryOp<T> yes(Supplier<T> valueSupplier) {
-        return chainingIf(routeCondition, () -> result = valueSupplier.get());
+    public TernaryOp<V> yes(Supplier<V> value) {
+        return chainWhen(actionAllowed, () -> this.value = value.get());
     }
 
-    public T no(T value) {
-        return routeCondition ? Objects.requireNonNull(result) : value;
+    public V no(V other) {
+        return retrieve(other);
     }
 
-    public T no(Supplier<T> valueSupplier) {
-        return routeCondition ? Objects.requireNonNull(result) : valueSupplier.get();
+    public V no(Supplier<V> other) {
+        return retrieve(other);
     }
 
-    public TernaryOp<T> yesThenAsk(boolean condition) {
-        return routeCondition ? new TernaryOp<>(condition, this) : this;
+    public TernaryOp<V> yesThenAsk(boolean condition) {
+        return expandSelfWhen(actionAllowed, condition);
     }
 
-    public TernaryOp<T> yesThenAsk(BooleanSupplier condition) {
-        return chainingIf(routeCondition, () -> routeCondition = condition.getAsBoolean());
+    public TernaryOp<V> yesThenAsk(BooleanSupplier condition) {
+        return chainWhen(actionAllowed, () -> actionAllowed = condition.getAsBoolean());
     }
 
-    public TernaryOp<T> noThenAsk(boolean condition) {
-        return chainingIf(!routeCondition, () -> routeCondition = condition);
+    public TernaryOp<V> noThenAsk(boolean condition) {
+        return chainWhen(!actionAllowed, () -> actionAllowed = condition);
     }
 
-    public TernaryOp<T> noThenAsk(BooleanSupplier condition) {
-        return chainingIf(!routeCondition, () -> routeCondition = condition.getAsBoolean());
+    public TernaryOp<V> noThenAsk(BooleanSupplier condition) {
+        return chainWhen(!actionAllowed, () -> actionAllowed = condition.getAsBoolean());
     }
 
 }
