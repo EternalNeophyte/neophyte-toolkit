@@ -9,6 +9,12 @@ import java.util.function.Supplier;
  */
 public interface Chaining<T extends Chaining<T>> {
 
+    default void when(boolean condition, Runnable action) {
+        if(condition) {
+            action.run();
+        }
+    }
+
     default T chain(Runnable action) {
         action.run();
         return (T) this;

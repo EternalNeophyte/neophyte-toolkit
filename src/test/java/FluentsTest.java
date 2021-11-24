@@ -17,15 +17,21 @@ public class FluentsTest {
 
     @Test
     public void askingPassesWhenYes() {
-        String s = Fluent.<String>asking(5 < 7)
+        String s = Fluent.<String>ask(5 < 7)
                 .yes( "Ok")
                 .no("Wrong");
         assertEquals("Ok", s);
     }
 
+    @Test
     public void askingPassesWhenYesNested() {
-        Integer i = Fluent.<Integer>asking(0 < 2)
-                .yesThenAsk(0 > 3)
-                .no(1);
+        Integer i = Fluent.<Integer>
+                        ask(0 < 2)
+                            .yesThenAsk(0 > 3)
+                                .yes(10)
+                                .noAndBreak(-10)
+                            .no(1);
+        //tOdO fIX
+        assertEquals(Integer.valueOf(-10) , i);
     }
 }

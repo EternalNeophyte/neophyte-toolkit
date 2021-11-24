@@ -2,6 +2,8 @@ package fluent;
 
 import support.Chaining;
 
+import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -17,19 +19,25 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
     boolean actionAllowed;
     T origin;
     V value;
+    BiFunction<Boolean, T, T> expander;
 
-    Fractal(boolean actionAllowed, T origin) {
+    Fractal(boolean actionAllowed, T origin, BiFunction<Boolean, T, T> expander) {
         this.actionAllowed = actionAllowed;
         this.origin = origin;
         this.value = null;
+        this.expander = expander;
+    }
+
+    Fractal(boolean actionAllowed, T origin) {
+        this(actionAllowed, origin, origin == null ? null : origin.expander);
     }
 
     Fractal(boolean actionAllowed) {
         this(actionAllowed, null);
     }
 
-    T expandSelfWhen(boolean actionAllowed, boolean thenAllowed) {
-        return exchangeWhen(actionAllowed, (T) new Fractal<>(thenAllowed, (T) this));
+    T expandWhen(boolean actionAllowed, boolean nextCondition) {
+        return exchangeWhen(actionAllowed, expander == null ? (T) this : expander.apply(nextCondition, (T)this));
     }
 
     T back() {
