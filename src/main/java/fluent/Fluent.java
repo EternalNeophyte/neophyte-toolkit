@@ -39,6 +39,12 @@ public class Fluent {
         return new TernaryOp<>(routeCondition);
     }
 
+    public static <T> TernaryOp<T> askOptional(boolean routeCondition) {
+        //ToDo реализовать
+        return null;
+    }
+
+
     public static <T> TernaryOp<T> ask(BooleanSupplier routeCondition) {
         return new TernaryOp<>(routeCondition.getAsBoolean());
     }
