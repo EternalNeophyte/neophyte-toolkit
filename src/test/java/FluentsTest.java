@@ -29,9 +29,22 @@ public class FluentsTest {
                         ask(0 < 2)
                             .yesThenAsk(0 > 3)
                                 .yes(10)
-                                .noAndBreak(-10)
+                                .noThenBreak(-10)
                             .no(1);
-        //tOdO fIX
         assertEquals(Integer.valueOf(-10) , i);
+        Integer i2 = Fluent.<Integer>
+                        ask(0 > 2)
+                .yesThenAsk(0 > 3)
+                .yes(10)
+                .noThenBreak(-10)
+                .no(1);
+        assertEquals(Integer.valueOf(1), i2);
+        Integer i3 = Fluent.<Integer>
+                        ask(0 < 2)
+                .yesThenAsk(0 < 3)
+                .yes(10)
+                .noThenBreak(-10)
+                .no(1);
+        assertEquals(Integer.valueOf(10), i3);
     }
 }

@@ -2,6 +2,8 @@ package support;
 
 import java.util.function.Supplier;
 
+import static java.util.Objects.nonNull;
+
 /**
  * Created on 22.11.2021 by
  *
@@ -29,10 +31,10 @@ public interface Chaining<T extends Chaining<T>> {
     }
 
     default T exchangeWhen(boolean condition, T other) {
-        return condition && other != null ? other : (T) this ;
+        return condition && nonNull(other) ? other : (T) this;
     }
 
     default T exchangeWhen(boolean condition, Supplier<T> other) {
-        return condition  ? other.get() : (T) this;
+        return condition && nonNull(other) ? other.get() : (T) this;
     }
 }

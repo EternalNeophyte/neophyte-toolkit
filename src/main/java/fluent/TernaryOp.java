@@ -1,7 +1,10 @@
 package fluent;
 
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Created on 22.11.2021 by
@@ -10,12 +13,12 @@ import java.util.function.Supplier;
  */
 public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
 
-    public TernaryOp(boolean actionAllowed, TernaryOp<V> origin) {
+    TernaryOp(boolean actionAllowed, TernaryOp<V> origin) {
         super(actionAllowed, origin, TernaryOp::new);
     }
 
     TernaryOp(boolean actionAllowed) {
-        super(actionAllowed);
+        this(actionAllowed, null);
     }
 
     public TernaryOp<V> yes(V value) {
@@ -27,37 +30,48 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
     }
 
     public V no(V value) {
-        return retrieve(value);
+        return actionAllowed
+                ? retrieve(value)
+                : requireNonNull(value);
     }
 
     public V no(Supplier<V> value) {
-        return retrieve(value);
-    }
-
-    public TernaryOp<V> noAndBreak(V value) {
-        when(!actionAllowed, () -> this.value = value);
-        return back();
-    }
-
-    public TernaryOp<V> noAndBreak(Supplier<V> value) {
-        return noAndBreak(value.get());
+        return no(value.get());
     }
 
     public TernaryOp<V> yesThenAsk(boolean condition) {
-        return expandWhen(actionAllowed, condition);
-        //exchangeWhen(actionAllowed, expander.apply(condition, this));
+        return expandSelf(actionAllowed, condition);
     }
 
     public TernaryOp<V> yesThenAsk(BooleanSupplier condition) {
-        return expandWhen(actionAllowed, condition.getAsBoolean());
+        return expandSelf(actionAllowed, condition.getAsBoolean());
     }
 
     public TernaryOp<V> noThenAsk(boolean condition) {
-        return expandWhen(!actionAllowed, condition);
+        return expandSelf(!actionAllowed, condition);
     }
 
     public TernaryOp<V> noThenAsk(BooleanSupplier condition) {
-        return expandWhen(!actionAllowed, condition.getAsBoolean());
+        return expandSelf(!actionAllowed, condition.getAsBoolean());
     }
+
+    public TernaryOp<V> yesThenBreak(V value) {
+        return thenBreak(actionAllowed, value);
+    }
+
+    public TernaryOp<V> yesThenBreak(Supplier<V> value) {
+        return thenBreak(actionAllowed, value.get());
+    }
+
+    public TernaryOp<V> noThenBreak(V value) {
+        return thenBreak(!actionAllowed, value);
+    }
+
+    public TernaryOp<V> noThenBreak(Supplier<V> value) {
+        return thenBreak(!actionAllowed, value.get());
+    }
+
+
+
 
 }
