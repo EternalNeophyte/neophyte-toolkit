@@ -3,8 +3,6 @@ package fluent;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Created on 22.11.2021 by
  *
@@ -25,17 +23,7 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
     }
 
     public TernaryOp<V> yes(Supplier<V> value) {
-        return yes(value.get());
-    }
-
-    public V no(V value) {
-        return actionAllowed
-                ? retrieve(value)
-                : requireNonNull(value);
-    }
-
-    public V no(Supplier<V> value) {
-        return no(value.get());
+        return chainWhen(actionAllowed, () -> this.value = value.get());
     }
 
     public TernaryOp<V> yesThenAsk(boolean condition) {
@@ -46,20 +34,36 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
         return expandSelf(actionAllowed, condition.getAsBoolean());
     }
 
-    public TernaryOp<V> noThenAsk(boolean condition) {
-        return expandSelf(!actionAllowed, condition);
-    }
-
-    public TernaryOp<V> noThenAsk(BooleanSupplier condition) {
-        return expandSelf(!actionAllowed, condition.getAsBoolean());
-    }
-
     public TernaryOp<V> yesThenBreak(V value) {
         return thenBreak(actionAllowed, value);
     }
 
     public TernaryOp<V> yesThenBreak(Supplier<V> value) {
         return thenBreak(actionAllowed, value.get());
+    }
+
+    public V yesThenYield(V value) {
+        return thenYield(actionAllowed, value);
+    }
+
+    public V yesThenYield(Supplier<V> value) {
+        return thenYield(actionAllowed, value.get());
+    }
+
+    public V no(V value) {
+        return thenYield(!actionAllowed, value);
+    }
+
+    public V no(Supplier<V> value) {
+        return thenYield(!actionAllowed, value.get());
+    }
+
+    public TernaryOp<V> noThenAsk(boolean condition) {
+        return expandSelf(!actionAllowed, condition);
+    }
+
+    public TernaryOp<V> noThenAsk(BooleanSupplier condition) {
+        return expandSelf(!actionAllowed, condition.getAsBoolean());
     }
 
     public TernaryOp<V> noThenBreak(V value) {
@@ -69,8 +73,4 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
     public TernaryOp<V> noThenBreak(Supplier<V> value) {
         return thenBreak(!actionAllowed, value.get());
     }
-
-
-
-
 }

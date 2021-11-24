@@ -52,10 +52,16 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
     V retrieve(V other) {
         return valueUplifted
                     ? requireNonNull(value)
-                    : requireNonNull(other);
+                    : null; //ToDo придумать что-нибудь с дефолтным значением типа byDefault
     }
 
     V retrieve(Supplier<V> other) {
         return retrieve(other.get());
+    }
+
+    V thenYield(boolean condition, V value) {
+        return condition
+                ? requireNonNull(value)
+                : retrieve(value);
     }
 }
