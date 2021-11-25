@@ -4,10 +4,9 @@ import support.Chaining;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Created on 23.11.2021 by
@@ -50,16 +49,12 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
         return back();
     }
 
-    V retrieve(V other) {
-        return valueUplifted
-                    ? requireNonNull(value)
-                    : null; //ToDo придумать что-нибудь с дефолтным значением типа byDefault
-    }
-
-    V thenYield(boolean condition, V value) {
+    V thenYield(boolean condition, V other) {
         return condition
-                ? requireNonNull(value)
-                : retrieve(value);
+                ? requireNonNull(other)
+                : valueUplifted
+                    ? requireNonNull(value)
+                    : null;
     }
 
     Optional<V> thenOptional(boolean condition, V value) {
