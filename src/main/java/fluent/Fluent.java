@@ -28,6 +28,7 @@ public class Fluent {
     }
 
     public static void loop(IntPredicate indexPredicate, IntConsumer indexConsumer) {
+        //ToDo AtomicInteger
         int index = 0;
         while (indexPredicate.test(index)) {
             indexConsumer.accept(index);
@@ -35,12 +36,12 @@ public class Fluent {
         }
     }
 
-    public static <T> TernaryOp<T> ask(boolean routeCondition) {
-        return new TernaryOp<>(routeCondition);
+    public static <T> TernaryOp<T> ask(boolean condition) {
+        return new TernaryOp<>(condition);
     }
 
-    public static <T> TernaryOp<T> ask(BooleanSupplier routeCondition) {
-        return new TernaryOp<>(routeCondition.getAsBoolean());
+    public static <T> TernaryOp<T> ask(BooleanSupplier condition) {
+        return new TernaryOp<>(condition.getAsBoolean());
     }
 
 }
