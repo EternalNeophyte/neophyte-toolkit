@@ -1,5 +1,6 @@
 package fluent;
 
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -50,6 +51,14 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
         return thenYield(actionAllowed, value.get());
     }
 
+    public Optional<V> yesThenOptional(V value) {
+        return thenOptional(actionAllowed, value);
+    }
+
+    public Optional<V> yesThenOptional(Supplier<V> value) {
+        return thenOptional(actionAllowed, value.get());
+    }
+
     public V no(V value) {
         return thenYield(!actionAllowed, value);
     }
@@ -72,5 +81,13 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
 
     public TernaryOp<V> noThenBreak(Supplier<V> value) {
         return thenBreak(!actionAllowed, value.get());
+    }
+
+    public Optional<V> noThenOptional(V value) {
+        return thenOptional(!actionAllowed, value);
+    }
+
+    public Optional<V> noThenOptional(Supplier<V> value) {
+        return thenOptional(!actionAllowed, value.get());
     }
 }

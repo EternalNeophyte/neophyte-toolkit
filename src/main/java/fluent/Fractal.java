@@ -2,6 +2,7 @@ package fluent;
 
 import support.Chaining;
 
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -55,13 +56,14 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
                     : null; //ToDo придумать что-нибудь с дефолтным значением типа byDefault
     }
 
-    V retrieve(Supplier<V> other) {
-        return retrieve(other.get());
-    }
-
     V thenYield(boolean condition, V value) {
         return condition
                 ? requireNonNull(value)
                 : retrieve(value);
     }
+
+    Optional<V> thenOptional(boolean condition, V value) {
+        return Optional.ofNullable(thenYield(condition, value));
+    }
+
 }
