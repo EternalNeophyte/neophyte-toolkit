@@ -1,5 +1,6 @@
 package support;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import static java.util.Objects.nonNull;
@@ -24,6 +25,10 @@ public interface Chaining<T extends Chaining<T>> {
 
     default T chainWhen(boolean condition, Runnable action) {
         return condition ? chain(action) : (T) this;
+    }
+
+    default T chainWhen(BooleanSupplier condition, Runnable action) {
+        return condition.getAsBoolean() ? chain(action) : (T) this;
     }
 
     default T chainWhenOrElse(boolean condition, Runnable main, Runnable alternative) {

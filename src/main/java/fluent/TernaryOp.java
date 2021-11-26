@@ -20,11 +20,11 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
     }
 
     public TernaryOp<V> yes(V value) {
-        return chainWhen(actionAllowed, () -> this.value = value);
+        return exchangeWhen(actionAllowed, updated(value));
     }
 
     public TernaryOp<V> yes(Supplier<V> value) {
-        return chainWhen(actionAllowed, () -> this.value = value.get());
+        return exchangeWhen(actionAllowed, updated(value.get()));
     }
 
     public TernaryOp<V> yesThenAsk(boolean condition) {
@@ -90,4 +90,5 @@ public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
     public Optional<V> noThenOptional(Supplier<V> value) {
         return thenOptional(!actionAllowed, value.get());
     }
+
 }

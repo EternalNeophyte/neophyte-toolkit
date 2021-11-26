@@ -18,22 +18,19 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
     BiFunction<Boolean, T, T> expander;
     T origin;
     V value;
-    boolean valueUplifted;
     boolean actionAllowed;
+
+    Fractal() { }
 
     Fractal(boolean actionAllowed, T origin, BiFunction<Boolean, T, T> expander) {
         this.expander = expander;
         this.origin = origin;
         this.value = null;
-        this.valueUplifted = false;
         this.actionAllowed = actionAllowed;
     }
 
-    T withUplifted(V value) {
-        return chain(() -> {
-            this.value = value;
-            this.valueUplifted = true;
-        });
+    T updated(V value) {
+        return chain(() -> this.value = value);
     }
 
     T expandSelf(boolean actionAllowed, boolean nextCondition) {
@@ -41,7 +38,7 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
     }
 
     T back() {
-        return nonNull(origin) ? origin.withUplifted(value) : (T) this;
+        return nonNull(origin) ? origin.updated(value) : (T) this;
     }
 
     T thenBreak(boolean condition, V value) {
@@ -50,11 +47,7 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
     }
 
     V thenYield(boolean condition, V other) {
-        return condition
-                ? requireNonNull(other)
-                : valueUplifted
-                    ? requireNonNull(value)
-                    : null;
+        return condition ? requireNonNull(other) : value;
     }
 
     Optional<V> thenOptional(boolean condition, V value) {

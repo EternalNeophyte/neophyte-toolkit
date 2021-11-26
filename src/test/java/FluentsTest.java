@@ -1,7 +1,11 @@
 import fluent.Fluent;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import org.junit.jupiter.api.Test;
 
 /**
  * Created on 22.11.2021 by
@@ -53,5 +57,26 @@ public class FluentsTest {
         assertEquals(Integer.valueOf(6), i5);
         Integer i6 = Fluent.<Integer>ask(false).yesThenYield(6);
         assertNull(i6);
+    }
+
+    @Test
+    public void testTernaryOpOptional() {
+        String result = Fluent.<String>
+                ask(true)
+                .yesThenAsk(false)
+                    .yes("yes2")
+                    .noThenBreak(() -> {
+                        System.out.println("Break!");
+                        return "no2";
+                    })
+                .noThenOptional("no")
+                .orElseThrow();
+        assertEquals("no2", result);
+    }
+
+    @Test
+    public void testConcurrentLoop() {
+        Runnable task = () -> Fluent.loop(30, i -> System.out.println("#" + i));
+        ForkJoinPool.commonPool().execute(ForkJoinTask.adapt(task));
     }
 }
