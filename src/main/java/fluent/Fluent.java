@@ -45,9 +45,8 @@ public class Fluent {
         return new TernaryOp<>(condition.getAsBoolean());
     }
 
-    public static SelectCase select(Object arg) {
-        //ToDo specify
-        return null;
+    public static <T> SelectCase<T> select(T value) {
+        return new SelectCase<>(value);
     }
 
 }

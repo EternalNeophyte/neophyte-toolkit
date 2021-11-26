@@ -9,10 +9,10 @@ import java.util.function.Supplier;
  *
  * @author alexandrov
  */
-public class TernaryOp<V> extends Fractal<TernaryOp<V>, V> {
+public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
 
     TernaryOp(boolean actionAllowed, TernaryOp<V> origin) {
-        super(actionAllowed, origin, TernaryOp::new);
+        super(actionAllowed, TernaryOp::new, origin, null);
     }
 
     TernaryOp(boolean actionAllowed) {

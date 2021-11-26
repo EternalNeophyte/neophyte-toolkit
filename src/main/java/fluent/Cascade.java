@@ -13,20 +13,18 @@ import static java.util.Objects.requireNonNull;
  *
  * @author alexandrov
  */
-public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
+public class Cascade<T extends Cascade<T, V>, V> implements Chaining<T> {
 
+    boolean actionAllowed;
     BiFunction<Boolean, T, T> expander;
     T origin;
     V value;
-    boolean actionAllowed;
 
-    Fractal() { }
-
-    Fractal(boolean actionAllowed, T origin, BiFunction<Boolean, T, T> expander) {
+    public Cascade(boolean actionAllowed, BiFunction<Boolean, T, T> expander, T origin, V value) {
+        this.actionAllowed = actionAllowed;
         this.expander = expander;
         this.origin = origin;
-        this.value = null;
-        this.actionAllowed = actionAllowed;
+        this.value = value;
     }
 
     T updated(V value) {
@@ -42,7 +40,9 @@ public class Fractal<T extends Fractal<T, V>, V> implements Chaining<T> {
     }
 
     T thenBreak(boolean condition, V value) {
-        when(condition, () -> this.value = value);
+        if(condition) {
+            this.value = value;
+        }
         return back();
     }
 

@@ -79,4 +79,12 @@ public class FluentsTest {
         Runnable task = () -> Fluent.loop(30, i -> System.out.println("#" + i));
         ForkJoinPool.commonPool().execute(ForkJoinTask.adapt(task));
     }
+
+    @Test
+    public void testSelectRange() {
+        //Works fine with all numbers
+        Fluent.select(3)
+                .whenRange(1, 2, v -> System.out.println("Oof its kinda small"))
+                .whenRange(2, 4, v -> System.out.println("Ok"));
+    }
 }

@@ -2,8 +2,6 @@ package fluent;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -11,14 +9,14 @@ import java.util.function.Consumer;
  *
  * @author alexandrov
  */
-public class SelectCase<V> extends Fractal<SelectCase<V>, V>  {
+public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
 
-    SelectCase(boolean actionAllowed, SelectCase<V> origin, BiFunction<Boolean, SelectCase<V>, SelectCase<V>> expander) {
-        super(actionAllowed, origin, expander);
+    SelectCase(boolean actionAllowed, SelectCase<V> origin) {
+        super(actionAllowed, SelectCase::new, origin, null);
     }
-    //ToDo
+
     SelectCase(V value) {
-        this.value = value;
+        super(true, SelectCase::new, null, value);
     }
 
     @SafeVarargs
@@ -55,13 +53,20 @@ public class SelectCase<V> extends Fractal<SelectCase<V>, V>  {
         });
     }
 
-    public SelectCase<V> whenRange(V startInclusive, V endExclusive, Consumer<V> action) {
+    public SelectCase<V> whenRange(V startInclusive, V endExclusive, Consumer<V> consumer) {
         return chainWhen(actionAllowed && value instanceof Number,
                         () -> {
-                            int valueInt = ((Number)value).intValue(),
-                                startInclusiveInt = ((Number)startInclusive).intValue(),
-                                endExclusiveInt = ((Number)endExclusive).intValue();
-                            //ToDo сравнения
+                            double actual = ((Number) value).doubleValue(),
+                                   start = ((Number) startInclusive).doubleValue(),
+                                   end = ((Number) endExclusive).doubleValue();
+                            if(start >= end) {
+                                double buf = start;
+                                start = end;
+                                end = buf;
+                            }
+                            if(start <= actual && actual < end) {
+                                consumer.accept(value);
+                            }
                         });
     }
 

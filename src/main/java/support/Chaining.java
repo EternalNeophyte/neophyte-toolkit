@@ -3,7 +3,7 @@ package support;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Created on 22.11.2021 by
@@ -11,12 +11,6 @@ import static java.util.Objects.nonNull;
  * @author alexandrov
  */
 public interface Chaining<T extends Chaining<T>> {
-
-    default void when(boolean condition, Runnable action) {
-        if(condition) {
-            action.run();
-        }
-    }
 
     default T chain(Runnable action) {
         action.run();
@@ -35,11 +29,24 @@ public interface Chaining<T extends Chaining<T>> {
         return condition ? chain(main) : chain(alternative);
     }
 
+    default T chainWhenOrElse(BooleanSupplier condition, Runnable main, Runnable alternative) {
+        return condition.getAsBoolean() ? chain(main) : chain(alternative);
+    }
+
     default T exchangeWhen(boolean condition, T other) {
-        return condition && nonNull(other) ? other : (T) this;
+        return condition ? requireNonNull(other) : (T) this;
+    }
+
+    default T exchangeWhen(BooleanSupplier condition, T other) {
+        return condition.getAsBoolean() ? requireNonNull(other) : (T) this;
     }
 
     default T exchangeWhen(boolean condition, Supplier<T> other) {
-        return condition && nonNull(other) ? other.get() : (T) this;
+        return condition ? requireNonNull(other).get() : (T) this;
     }
+
+    default T exchangeWhen(BooleanSupplier condition, Supplier<T> other) {
+        return condition.getAsBoolean() ? requireNonNull(other).get() : (T) this;
+    }
+
 }
