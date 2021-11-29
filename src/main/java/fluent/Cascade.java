@@ -20,7 +20,13 @@ public class Cascade<T extends Cascade<T, V>, V> implements Chaining<T> {
     T origin;
     V value;
 
-    public Cascade(boolean actionAllowed, BiFunction<Boolean, T, T> expander, T origin, V value) {
+    Cascade(boolean actionAllowed, T origin, V value) {
+        this.actionAllowed = actionAllowed;
+        this.origin = origin;
+        this.value = value;
+    }
+
+    Cascade(boolean actionAllowed, BiFunction<Boolean, T, T> expander, T origin, V value) {
         this.actionAllowed = actionAllowed;
         this.expander = expander;
         this.origin = origin;

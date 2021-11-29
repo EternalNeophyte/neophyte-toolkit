@@ -2,6 +2,7 @@ package fluent;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -11,13 +12,16 @@ import java.util.function.Function;
  * @author alexandrov
  */
 public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
+/*
 
-    SelectCase(boolean actionAllowed, SelectCase<V> origin) {
-        super(actionAllowed, SelectCase::new, origin, null);
+    SelectCase(boolean actionAllowed, SelectCase<V> origin, V value) {
+
+        //super(actionAllowed, cs -> new SelectCase<V>(actionAllowed, origin, value), origin, value);
     }
+*/
 
     SelectCase(V value) {
-        super(true, SelectCase::new, null, value);
+        super(true, null, null, value);
     }
 
     @SafeVarargs
@@ -74,6 +78,7 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
     @SafeVarargs
     public final <U> SelectCase<U> newSelectCaseWhen(Function<V, U> mapper, V... values) {
         //ToDo
+        //return new SelectCase<U>(true, (SelectCase)this);
         return null;
     }
 

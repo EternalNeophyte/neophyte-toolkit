@@ -87,4 +87,11 @@ public class FluentsTest {
                 .whenRange(1, 2, v -> System.out.println("Oof its kinda small"))
                 .whenRange(2, 4, v -> System.out.println("Ok"));
     }
+
+    @Test
+    public void testNewSelectCase() {
+        Fluent.select("34")
+                .newSelectCaseWhen(Integer::parseInt, "34")
+                .whenRange(20, 35, System.out::println);
+    }
 }
