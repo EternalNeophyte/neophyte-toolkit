@@ -3,6 +3,7 @@ package fluent;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Created on 26.11.2021 by
@@ -68,6 +69,12 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
                                 consumer.accept(value);
                             }
                         });
+    }
+
+    @SafeVarargs
+    public final <U> SelectCase<U> newSelectCaseWhen(Function<V, U> mapper, V... values) {
+        //ToDo
+        return null;
     }
 
 }
