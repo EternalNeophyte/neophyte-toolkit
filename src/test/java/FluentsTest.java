@@ -100,6 +100,7 @@ public class FluentsTest {
     public void testWhenThen() {
         Fluent.select(5)
                 .when(1, 2, 3).then(v -> System.out.println("1-3"))
-                .when(5).then(System.out::println);
+                .when(5).then(System.out::println)
+                .when(6).breaks(System.out::println);
     }
 }
