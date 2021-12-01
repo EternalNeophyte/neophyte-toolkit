@@ -72,29 +72,35 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
     }
 
     @SafeVarargs
-    public final <U> SelectCase<U> selectCaseWhen(Function<V, U> mapper, V... values) {
+    public final <U> SelectCase<U> selectCaseWhen(Function<? super V, ? extends U> mapper, V... values) {
         return new SelectCase<U>(equalsAny(values), (SelectCase)this, mapper.apply(value));
     }
 
-    public ThenClause when(V... values) {
+    @SafeVarargs
+    public final ThenClause when(V... values) {
         actionAllowed = equalsAny(values); //ToDo? не стоит менять так
         return thenClause;
     }
 
     public class ThenClause {
 
-        ThenClause() { }
+        ThenClause() {
+        }
 
         public SelectCase<V> then(Consumer<V> consumer) {
             return chainWhen(actionAllowed, () -> consumer.accept(value));
         }
 
         public SelectCase<V> breaks(Consumer<V> consumer) {
-            if(actionAllowed) {
+            if (actionAllowed) {
                 consumer.accept(value);
             }
             actionAllowed = false;
             return SelectCase.this;
+        }
+
+        public final <U> SelectCase<U> select(Function<? super V, ? extends U> mapper) {
+            return new SelectCase<U>(actionAllowed, (SelectCase)SelectCase.this, mapper.apply(value));
         }
     }
 }
