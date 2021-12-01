@@ -91,16 +91,29 @@ public class FluentsTest {
     @Test
     public void testNewSelectCase() {
         Fluent.select("34")
-                .selectCaseWhen(Integer::parseInt, "34")
+                .when("34")
+                .mapThenSelect(Integer::parseInt)
                     .breakWhen(System.out::println, 34)
                     .whenRange(20, 35, System.out::println);
     }
 
     @Test
     public void testWhenThen() {
-        Fluent.select(5)
-                .when(1, 2, 3).then(v -> System.out.println("1-3"))
-                .when(5).then(System.out::println)
-                .when(6).breaks(System.out::println);
+        var s = Fluent.select(2)
+                .when(1, 2, 3)
+                    .pass(v -> System.out.println("1-3"))
+                .when(v -> v > 6)
+                    .pass(System.out::println)
+                .when(6)
+                    .block(System.out::println)
+                .when(9, 11)
+                    .mapThenSelect(String::valueOf)
+                    .when("3")
+                        .save("ty")
+                    .when("2")
+                        .saveThenBack("saved")
+                .optional()
+                .orElseThrow();
+        s.toString();
     }
 }

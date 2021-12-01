@@ -1,26 +1,50 @@
 package fluent;
 
+import support.Chaining;
+
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Created on 26.11.2021 by
  *
  * @author alexandrov
  */
-public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
+public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
 
     ThenClause thenClause = new ThenClause();
+    Object uplifted;
 
-    SelectCase(boolean actionAllowed, SelectCase<V> origin, V value) {
+    public void setUplifted(Object uplifted) {
+        this.uplifted = uplifted;
+    }
+
+    public SelectCase(boolean actionAllowed, O origin, V value) {
+        super(actionAllowed, origin, value);
+    }
+
+    public SelectCase(V value) {
+        super(true, null, value);
+    }
+
+    public O uplift(Object value) {
+        if(origin != null && origin instanceof SelectCase) {
+            ((SelectCase) origin).setUplifted(value);
+        }
+        return origin;
+    }
+
+    /*SelectCase(boolean actionAllowed, SelectCase<V> origin, V value) {
         super(actionAllowed, null, origin, value);
     }
 
     SelectCase(V value) {
         super(false, null, null, value);
-    }
+    }*/
 
     @SafeVarargs
     private boolean equalsAny(V... values) {
@@ -28,13 +52,13 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
     }
 
     @SafeVarargs
-    public final SelectCase<V> when(Consumer<V> consumer, V... values) {
+    public final SelectCase<O, V> when(Consumer<V> consumer, V... values) {
         return chainWhen(actionAllowed && equalsAny(values),
                         () -> consumer.accept(value));
     }
 
     @SafeVarargs
-    public final SelectCase<V> breakWhen(Consumer<V> consumer, V... values) {
+    public final SelectCase<O, V> breakWhen(Consumer<V> consumer, V... values) {
         return chainWhen(actionAllowed && equalsAny(values),
                         () -> {
                             consumer.accept(value);
@@ -42,19 +66,19 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
                         });
     }
 
-    public SelectCase<V> whenOther(Consumer<V> consumer) {
+    public SelectCase<O, V> whenOther(Consumer<V> consumer) {
         return chainWhen(actionAllowed, () -> consumer.accept(value));
     }
 
-    public SelectCase<V> whenOtherThrow() {
+    public SelectCase<O, V> whenOtherThrow() {
         return whenOtherThrow(new NoSuchElementException("Actual value doesn't match any of specified by 'when' clauses"));
     }
 
-    public SelectCase<V> whenOtherThrow(RuntimeException e) {
+    public SelectCase<O, V> whenOtherThrow(RuntimeException e) {
         return chainWhen(actionAllowed, () -> { throw e; });
     }
 
-    public SelectCase<V> whenRange(V startInclusive, V endExclusive, Consumer<V> consumer) {
+    public SelectCase<O, V> whenRange(V startInclusive, V endExclusive, Consumer<V> consumer) {
         return chainWhen(actionAllowed && value instanceof Number,
                         () -> {
                             double actual = ((Number) value).doubleValue(),
@@ -71,9 +95,13 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
                         });
     }
 
-    @SafeVarargs
-    public final <U> SelectCase<U> selectCaseWhen(Function<? super V, ? extends U> mapper, V... values) {
-        return new SelectCase<U>(equalsAny(values), (SelectCase)this, mapper.apply(value));
+    public Object retrieve() {
+        //или value
+        return uplifted;
+    }
+
+    public Optional<?> optional() {
+        return Optional.ofNullable(uplifted);
     }
 
     @SafeVarargs
@@ -82,16 +110,32 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
         return thenClause;
     }
 
+    //Еще для boolean + whenRange
+    public ThenClause when(Predicate<V> valuePredicate) {
+        valuePredicate.test(value);
+        return thenClause;
+    }
+
+    public final ThenClause whenNull() {
+        return thenClause;
+    }
+
     public class ThenClause {
 
-        ThenClause() {
-        }
+        ThenClause() { }
 
-        public SelectCase<V> then(Consumer<V> consumer) {
+        //Аналог проваливания ветвей в свиче
+        public SelectCase<O, V> pass(Consumer<V> consumer) {
             return chainWhen(actionAllowed, () -> consumer.accept(value));
         }
 
-        public SelectCase<V> breaks(Consumer<V> consumer) {
+        public O passThenBack(Consumer<V> consumer) {
+            consumer.accept(value);
+            return uplift(value);
+        }
+
+        //Аналог ветви вместе с break
+        public SelectCase<O, V> block(Consumer<V> consumer) {
             if (actionAllowed) {
                 consumer.accept(value);
             }
@@ -99,8 +143,19 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
             return SelectCase.this;
         }
 
-        public final <U> SelectCase<U> select(Function<? super V, ? extends U> mapper) {
-            return new SelectCase<U>(actionAllowed, (SelectCase)SelectCase.this, mapper.apply(value));
+        //Аналог yield
+        public SelectCase<O, V> save(V other) {
+            value = other;
+            return SelectCase.this;
         }
+
+        public O saveThenBack(V other) {
+            return uplift(other);
+        }
+
+        public <U> SelectCase<SelectCase<O, V>, U> mapThenSelect(Function<? super V, ? extends U> mapper) {
+            return new SelectCase<>(actionAllowed, SelectCase.this, mapper.apply(value));
+        }
+
     }
 }
