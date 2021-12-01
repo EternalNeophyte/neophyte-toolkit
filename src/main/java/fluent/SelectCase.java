@@ -2,7 +2,6 @@ package fluent;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -12,32 +11,31 @@ import java.util.function.Function;
  * @author alexandrov
  */
 public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
-/*
+
+    ThenClause thenClause = new ThenClause();
 
     SelectCase(boolean actionAllowed, SelectCase<V> origin, V value) {
-
-        //super(actionAllowed, cs -> new SelectCase<V>(actionAllowed, origin, value), origin, value);
+        super(actionAllowed, null, origin, value);
     }
-*/
 
     SelectCase(V value) {
-        super(true, null, null, value);
+        super(false, null, null, value);
     }
 
     @SafeVarargs
-    private boolean equalsOneOf(V... values) {
+    private boolean equalsAny(V... values) {
         return Arrays.asList(values).contains(value);
     }
 
     @SafeVarargs
     public final SelectCase<V> when(Consumer<V> consumer, V... values) {
-        return chainWhen(actionAllowed && equalsOneOf(values),
+        return chainWhen(actionAllowed && equalsAny(values),
                         () -> consumer.accept(value));
     }
 
     @SafeVarargs
     public final SelectCase<V> breakWhen(Consumer<V> consumer, V... values) {
-        return chainWhen(actionAllowed && equalsOneOf(values),
+        return chainWhen(actionAllowed && equalsAny(values),
                         () -> {
                             consumer.accept(value);
                             actionAllowed = false;
@@ -53,9 +51,7 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
     }
 
     public SelectCase<V> whenOtherThrow(RuntimeException e) {
-        return chainWhen(actionAllowed, () -> {
-            throw e;
-        });
+        return chainWhen(actionAllowed, () -> { throw e; });
     }
 
     public SelectCase<V> whenRange(V startInclusive, V endExclusive, Consumer<V> consumer) {
@@ -75,11 +71,23 @@ public class SelectCase<V> extends Cascade<SelectCase<V>, V> {
                         });
     }
 
+    //ToDo Maybe when(V... values).then(Consumer<V> action) ?
     @SafeVarargs
-    public final <U> SelectCase<U> newSelectCaseWhen(Function<V, U> mapper, V... values) {
-        //ToDo
-        //return new SelectCase<U>(true, (SelectCase)this);
-        return null;
+    public final <U> SelectCase<U> selectCaseWhen(Function<V, U> mapper, V... values) {
+        return new SelectCase<U>(equalsAny(values), (SelectCase)this, mapper.apply(value));
     }
 
+    public ThenClause when(V... values) {
+        actionAllowed = equalsAny(values);
+        return thenClause;
+    }
+
+    public class ThenClause {
+
+        ThenClause() { }
+
+        public SelectCase<V> then(Consumer<V> consumer) {
+            return chainWhen(actionAllowed, () -> consumer.accept(value));
+        }
+    }
 }

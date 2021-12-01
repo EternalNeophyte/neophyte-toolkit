@@ -33,19 +33,19 @@ public interface Chaining<T extends Chaining<T>> {
         return condition.getAsBoolean() ? chain(main) : chain(alternative);
     }
 
-    default T exchangeWhen(boolean condition, T other) {
+    default T swapWhen(boolean condition, T other) {
         return condition ? requireNonNull(other) : (T) this;
     }
 
-    default T exchangeWhen(BooleanSupplier condition, T other) {
+    default T swapWhen(BooleanSupplier condition, T other) {
         return condition.getAsBoolean() ? requireNonNull(other) : (T) this;
     }
 
-    default T exchangeWhen(boolean condition, Supplier<T> other) {
+    default T swapWhen(boolean condition, Supplier<T> other) {
         return condition ? requireNonNull(other).get() : (T) this;
     }
 
-    default T exchangeWhen(BooleanSupplier condition, Supplier<T> other) {
+    default T swapWhen(BooleanSupplier condition, Supplier<T> other) {
         return condition.getAsBoolean() ? requireNonNull(other).get() : (T) this;
     }
 

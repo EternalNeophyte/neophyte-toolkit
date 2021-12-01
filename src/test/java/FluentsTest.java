@@ -91,7 +91,15 @@ public class FluentsTest {
     @Test
     public void testNewSelectCase() {
         Fluent.select("34")
-                .newSelectCaseWhen(Integer::parseInt, "34")
-                .whenRange(20, 35, System.out::println);
+                .selectCaseWhen(Integer::parseInt, "34")
+                    .breakWhen(System.out::println, 34)
+                    .whenRange(20, 35, System.out::println);
+    }
+
+    @Test
+    public void testWhenThen() {
+        Fluent.select(5)
+                .when(1, 2, 3).then(v -> System.out.println("1-3"))
+                .when(5).then(System.out::println);
     }
 }

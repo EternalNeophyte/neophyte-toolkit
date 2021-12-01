@@ -20,12 +20,6 @@ public class Cascade<T extends Cascade<T, V>, V> implements Chaining<T> {
     T origin;
     V value;
 
-    Cascade(boolean actionAllowed, T origin, V value) {
-        this.actionAllowed = actionAllowed;
-        this.origin = origin;
-        this.value = value;
-    }
-
     Cascade(boolean actionAllowed, BiFunction<Boolean, T, T> expander, T origin, V value) {
         this.actionAllowed = actionAllowed;
         this.expander = expander;
@@ -38,7 +32,7 @@ public class Cascade<T extends Cascade<T, V>, V> implements Chaining<T> {
     }
 
     T expandSelf(boolean actionAllowed, boolean nextCondition) {
-        return exchangeWhen(actionAllowed, expander.apply(nextCondition, (T) this));
+        return swapWhen(actionAllowed, expander.apply(nextCondition, (T) this));
     }
 
     T back() {
