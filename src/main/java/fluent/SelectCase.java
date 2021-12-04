@@ -1,7 +1,5 @@
 package fluent;
 
-import support.Chaining;
-
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -16,58 +14,53 @@ import java.util.function.Predicate;
  */
 public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
 
-    ThenClause thenClause = new ThenClause();
-    Object uplifted;
+    private final ThenClause thenClause = new ThenClause();
+    private Object uplifted;
 
-    public void setUplifted(Object uplifted) {
-        this.uplifted = uplifted;
-    }
-
-    public SelectCase(boolean actionAllowed, O origin, V value) {
-        super(actionAllowed, origin, value);
+    public SelectCase(O origin, V value) {
+        super(true, origin, value);
     }
 
     public SelectCase(V value) {
         super(true, null, value);
     }
 
+    public void setUplifted(Object uplifted) {
+        this.uplifted = uplifted;
+    }
+
     public O uplift(Object value) {
-        if(origin != null && origin instanceof SelectCase) {
-            ((SelectCase) origin).setUplifted(value);
-        }
-        return origin;
+        return Optional.ofNullable(origin)
+                .filter(o -> o instanceof SelectCase)
+                .map(o -> {
+                    ((SelectCase) o).setUplifted(value);
+                    return o;
+                })
+                .orElseThrow(() -> new RuntimeException("Cannot uplift from origin"));
     }
-
-    /*SelectCase(boolean actionAllowed, SelectCase<V> origin, V value) {
-        super(actionAllowed, null, origin, value);
-    }
-
-    SelectCase(V value) {
-        super(false, null, null, value);
-    }*/
 
     @SafeVarargs
-    private boolean equalsAny(V... values) {
-        return Arrays.asList(values).contains(value);
+    private boolean boxedIn(V... values) {
+        return Arrays.asList(values).contains(boxed);
     }
 
     @SafeVarargs
     public final SelectCase<O, V> when(Consumer<V> consumer, V... values) {
-        return chainWhen(actionAllowed && equalsAny(values),
-                        () -> consumer.accept(value));
+        return chainWhen(actionAllowed && boxedIn(values),
+                        () -> consumer.accept(boxed));
     }
 
     @SafeVarargs
     public final SelectCase<O, V> breakWhen(Consumer<V> consumer, V... values) {
-        return chainWhen(actionAllowed && equalsAny(values),
+        return chainWhen(actionAllowed && boxedIn(values),
                         () -> {
-                            consumer.accept(value);
+                            consumer.accept(boxed);
                             actionAllowed = false;
                         });
     }
 
     public SelectCase<O, V> whenOther(Consumer<V> consumer) {
-        return chainWhen(actionAllowed, () -> consumer.accept(value));
+        return chainWhen(actionAllowed, () -> consumer.accept(boxed));
     }
 
     public SelectCase<O, V> whenOtherThrow() {
@@ -79,9 +72,9 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
     }
 
     public SelectCase<O, V> whenRange(V startInclusive, V endExclusive, Consumer<V> consumer) {
-        return chainWhen(actionAllowed && value instanceof Number,
+        return chainWhen(actionAllowed && boxed instanceof Number,
                         () -> {
-                            double actual = ((Number) value).doubleValue(),
+                            double actual = ((Number) boxed).doubleValue(),
                                    start = ((Number) startInclusive).doubleValue(),
                                    end = ((Number) endExclusive).doubleValue();
                             if(start >= end) {
@@ -90,7 +83,7 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
                                 end = buf;
                             }
                             if(start <= actual && actual < end) {
-                                consumer.accept(value);
+                                consumer.accept(boxed);
                             }
                         });
     }
@@ -100,19 +93,19 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
         return uplifted;
     }
 
-    public Optional<?> optional() {
+    /*public Optional<?> optional() {
         return Optional.ofNullable(uplifted);
-    }
+    }*/
 
     @SafeVarargs
     public final ThenClause when(V... values) {
-        actionAllowed = equalsAny(values); //ToDo? не стоит менять так
+        actionAllowed = boxedIn(values); //ToDo? не стоит менять так
         return thenClause;
     }
 
     //Еще для boolean + whenRange
     public ThenClause when(Predicate<V> valuePredicate) {
-        valuePredicate.test(value);
+        valuePredicate.test(boxed);
         return thenClause;
     }
 
@@ -126,18 +119,18 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
 
         //Аналог проваливания ветвей в свиче
         public SelectCase<O, V> pass(Consumer<V> consumer) {
-            return chainWhen(actionAllowed, () -> consumer.accept(value));
+            return chainWhen(actionAllowed, () -> consumer.accept(boxed));
         }
 
         public O passThenBack(Consumer<V> consumer) {
-            consumer.accept(value);
-            return uplift(value);
+            consumer.accept(boxed);
+            return uplift(boxed);
         }
 
         //Аналог ветви вместе с break
         public SelectCase<O, V> block(Consumer<V> consumer) {
             if (actionAllowed) {
-                consumer.accept(value);
+                consumer.accept(boxed);
             }
             actionAllowed = false;
             return SelectCase.this;
@@ -145,7 +138,7 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
 
         //Аналог yield
         public SelectCase<O, V> save(V other) {
-            value = other;
+            boxed = other;
             return SelectCase.this;
         }
 
@@ -154,7 +147,7 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
         }
 
         public <U> SelectCase<SelectCase<O, V>, U> mapThenSelect(Function<? super V, ? extends U> mapper) {
-            return new SelectCase<>(actionAllowed, SelectCase.this, mapper.apply(value));
+            return new SelectCase<>(SelectCase.this, mapper.apply(boxed));
         }
 
     }

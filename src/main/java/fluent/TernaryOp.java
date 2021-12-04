@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
 
     TernaryOp(boolean actionAllowed, TernaryOp<V> origin) {
-        super(actionAllowed, TernaryOp::new, origin, null);
+        super(actionAllowed, origin, null, TernaryOp::new);
     }
 
     TernaryOp(boolean actionAllowed) {
@@ -20,11 +20,11 @@ public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
     }
 
     public TernaryOp<V> yes(V value) {
-        return swapWhen(actionAllowed, updated(value));
+        return swapWhen(actionAllowed, rebox(value));
     }
 
     public TernaryOp<V> yes(Supplier<V> value) {
-        return swapWhen(actionAllowed, updated(value.get()));
+        return swapWhen(actionAllowed, rebox(value.get()));
     }
 
     public TernaryOp<V> yesThenAsk(boolean condition) {
@@ -36,19 +36,19 @@ public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
     }
 
     public TernaryOp<V> yesThenBreak(V value) {
-        return thenBreak(actionAllowed, value);
+        return thenBlock(actionAllowed, value);
     }
 
     public TernaryOp<V> yesThenBreak(Supplier<V> value) {
-        return thenBreak(actionAllowed, value.get());
+        return thenBlock(actionAllowed, value.get());
     }
 
     public V yesThenYield(V value) {
-        return thenYield(actionAllowed, value);
+        return thenUnbox(actionAllowed, value);
     }
 
     public V yesThenYield(Supplier<V> value) {
-        return thenYield(actionAllowed, value.get());
+        return thenUnbox(actionAllowed, value.get());
     }
 
     public Optional<V> yesThenOptional(V value) {
@@ -60,11 +60,11 @@ public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
     }
 
     public V no(V value) {
-        return thenYield(!actionAllowed, value);
+        return thenUnbox(!actionAllowed, value);
     }
 
     public V no(Supplier<V> value) {
-        return thenYield(!actionAllowed, value.get());
+        return thenUnbox(!actionAllowed, value.get());
     }
 
     public TernaryOp<V> noThenAsk(boolean condition) {
@@ -75,12 +75,12 @@ public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
         return expandSelf(!actionAllowed, condition.getAsBoolean());
     }
 
-    public TernaryOp<V> noThenBreak(V value) {
-        return thenBreak(!actionAllowed, value);
+    public TernaryOp<V> noThenBlock(V value) {
+        return thenBlock(!actionAllowed, value);
     }
 
-    public TernaryOp<V> noThenBreak(Supplier<V> value) {
-        return thenBreak(!actionAllowed, value.get());
+    public TernaryOp<V> noThenBlock(Supplier<V> value) {
+        return thenBlock(!actionAllowed, value.get());
     }
 
     public Optional<V> noThenOptional(V value) {

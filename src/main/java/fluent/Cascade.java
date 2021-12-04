@@ -1,57 +1,36 @@
 package fluent;
 
-import support.Chaining;
-
 import java.util.Optional;
 import java.util.function.BiFunction;
-
-import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Created on 23.11.2021 by
  *
  * @author alexandrov
  */
-public class Cascade<T extends Cascade<T, V>, V> implements Chaining<T> {
+public abstract class Cascade<T extends Cascade<T, V>, V> extends Polymorph<T, T, V> {
 
-    boolean actionAllowed;
     BiFunction<Boolean, T, T> expander;
-    T origin;
-    V value;
 
-    Cascade(boolean actionAllowed, BiFunction<Boolean, T, T> expander, T origin, V value) {
-        this.actionAllowed = actionAllowed;
+    public Cascade(boolean actionAllowed, T origin, V boxed, BiFunction<Boolean, T, T> expander) {
+        super(actionAllowed, origin, boxed);
         this.expander = expander;
-        this.origin = origin;
-        this.value = value;
-    }
-
-    T updated(V value) {
-        return chain(() -> this.value = value);
     }
 
     T expandSelf(boolean actionAllowed, boolean nextCondition) {
         return swapWhen(actionAllowed, expander.apply(nextCondition, (T) this));
     }
 
-    T back() {
-        return nonNull(origin) ? origin.updated(value) : (T) this;
+    T thenBlock(boolean condition, V other) {
+        return swap(origin, o -> o.rebox(condition ? other : boxed));
     }
 
-    T thenBreak(boolean condition, V value) {
-        if(condition) {
-            this.value = value;
-        }
-        return back();
-    }
-
-    V thenYield(boolean condition, V other) {
-        return condition ? requireNonNull(other) : value;
+    V thenUnbox(boolean condition, V other) {
+        return condition ? other : boxed;
     }
 
     Optional<V> thenOptional(boolean condition, V value) {
-        return Optional.ofNullable(thenYield(condition, value));
+        return Optional.ofNullable(thenUnbox(condition, value));
     }
 
 }

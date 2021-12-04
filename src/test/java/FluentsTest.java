@@ -34,21 +34,21 @@ public class FluentsTest {
                         ask(0 < 2)
                             .yesThenAsk(0 > 3)
                                 .yes(10)
-                                .noThenBreak(-10)
+                                .noThenBlock(-10)
                             .no(1);
         assertEquals(Integer.valueOf(-10) , i);
         Integer i2 = Fluent.<Integer>
                         ask(0 > 2)
                 .yesThenAsk(0 > 3)
                 .yes(10)
-                .noThenBreak(-10)
+                .noThenBlock(-10)
                 .no(1);
         assertEquals(Integer.valueOf(1), i2);
         Integer i3 = Fluent.<Integer>
                         ask(0 < 2)
                 .yesThenAsk(0 < 3)
                 .yes(10)
-                .noThenBreak(-10)
+                .noThenBlock(-10)
                 .no(1);
         assertEquals(Integer.valueOf(10), i3);
         Integer i4 = Fluent.<Integer>ask(true).yesThenAsk(true).yesThenBreak(4).no(5);
@@ -65,7 +65,7 @@ public class FluentsTest {
                 ask(true)
                 .yesThenAsk(false)
                     .yes("yes2")
-                    .noThenBreak(() -> {
+                    .noThenBlock(() -> {
                         System.out.println("Break!");
                         return "no2";
                     })
@@ -112,8 +112,8 @@ public class FluentsTest {
                         .save("ty")
                     .when("2")
                         .saveThenBack("saved")
-                .optional()
-                .orElseThrow();
+                /*.optionalBox()
+                .orElseThrow()*/;
         s.toString();
     }
 }
