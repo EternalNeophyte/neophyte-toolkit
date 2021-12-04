@@ -21,7 +21,7 @@ public abstract class Cascade<T extends Cascade<T, V>, V> extends Polymorph<T, T
         return swapWhen(actionAllowed, expander.apply(nextCondition, (T) this));
     }
 
-    T thenBlock(boolean condition, V other) {
+    T thenBack(boolean condition, V other) {
         return swap(origin, o -> o.rebox(condition ? other : boxed));
     }
 

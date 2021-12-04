@@ -15,7 +15,9 @@ import static java.util.Objects.nonNull;
 public interface Chaining<T extends Chaining<T>> {
 
     default T chain(Runnable action) {
-        action.run();
+        if(nonNull(action)) {
+            action.run();
+        }
         return (T) this;
     }
 
@@ -24,7 +26,7 @@ public interface Chaining<T extends Chaining<T>> {
     }
 
     default T chainWhen(BooleanSupplier condition, Runnable action) {
-        return condition.getAsBoolean() ? chain(action) : (T) this;
+        return requireNonNull(condition).getAsBoolean() ? chain(action) : (T) this;
     }
 
     default T chainWhenOrElse(boolean condition, Runnable main, Runnable alternative) {
@@ -32,7 +34,7 @@ public interface Chaining<T extends Chaining<T>> {
     }
 
     default T chainWhenOrElse(BooleanSupplier condition, Runnable main, Runnable alternative) {
-        return condition.getAsBoolean() ? chain(main) : chain(alternative);
+        return requireNonNull(condition).getAsBoolean() ? chain(main) : chain(alternative);
     }
 
     default T swap(T other) {
@@ -48,15 +50,16 @@ public interface Chaining<T extends Chaining<T>> {
     }
 
     default T swapWhen(BooleanSupplier condition, T other) {
-        return condition.getAsBoolean() ? requireNonNull(other) : (T) this;
+        return requireNonNull(condition).getAsBoolean() && nonNull(other) ? other : (T) this;
     }
 
     default T swapWhen(boolean condition, Supplier<T> other) {
-        return condition ? requireNonNull(other).get() : (T) this;
+        T result = nonNull(other) ? other.get() : null;
+        return nonNull(result) ? result : (T) this;
     }
 
     default T swapWhen(BooleanSupplier condition, Supplier<T> other) {
-        return condition.getAsBoolean() ? requireNonNull(other).get() : (T) this;
+        return swapWhen(requireNonNull(condition).getAsBoolean(), other);
     }
 
 }

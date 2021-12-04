@@ -34,28 +34,28 @@ public class FluentsTest {
                         ask(0 < 2)
                             .yesThenAsk(0 > 3)
                                 .yes(10)
-                                .noThenBlock(-10)
+                                .noThenBack(-10)
                             .no(1);
         assertEquals(Integer.valueOf(-10) , i);
         Integer i2 = Fluent.<Integer>
                         ask(0 > 2)
                 .yesThenAsk(0 > 3)
                 .yes(10)
-                .noThenBlock(-10)
+                .noThenBack(-10)
                 .no(1);
         assertEquals(Integer.valueOf(1), i2);
         Integer i3 = Fluent.<Integer>
                         ask(0 < 2)
                 .yesThenAsk(0 < 3)
                 .yes(10)
-                .noThenBlock(-10)
+                .noThenBack(-10)
                 .no(1);
         assertEquals(Integer.valueOf(10), i3);
-        Integer i4 = Fluent.<Integer>ask(true).yesThenAsk(true).yesThenBreak(4).no(5);
+        Integer i4 = Fluent.<Integer>ask(true).yesThenAsk(true).yesThenBack(4).no(5);
         assertEquals(Integer.valueOf(4), i4);
-        Integer i5 = Fluent.<Integer>ask(true).yesThenAsk(true).yesThenYield(6);
+        Integer i5 = Fluent.<Integer>ask(true).yesThenAsk(true).yesThenUnbox(6);
         assertEquals(Integer.valueOf(6), i5);
-        Integer i6 = Fluent.<Integer>ask(false).yesThenYield(6);
+        Integer i6 = Fluent.<Integer>ask(false).yesThenUnbox(6);
         assertNull(i6);
     }
 
@@ -65,7 +65,7 @@ public class FluentsTest {
                 ask(true)
                 .yesThenAsk(false)
                     .yes("yes2")
-                    .noThenBlock(() -> {
+                    .noThenBack(() -> {
                         System.out.println("Break!");
                         return "no2";
                     })
@@ -84,17 +84,20 @@ public class FluentsTest {
     public void testSelectRange() {
         //Works fine with all numbers
         Fluent.select(3)
-                .whenRange(1, 2, v -> System.out.println("Oof its kinda small"))
-                .whenRange(2, 4, v -> System.out.println("Ok"));
+                .whenRange(1, 8)
+                .pass(System.out::println)
+                .whenOther()
+                .pass(i -> System.out.println("Other"))
+                .unbox();
     }
 
     @Test
     public void testNewSelectCase() {
         Fluent.select("34")
                 .when("34")
-                .mapThenSelect(Integer::parseInt)
-                    .breakWhen(System.out::println, 34)
-                    .whenRange(20, 35, System.out::println);
+                .mapThenSelect(Integer::parseInt);
+                    /*.breakWhen(System.out::println, 34)
+                    .whenRange(20, 35, System.out::println);*/
     }
 
     @Test

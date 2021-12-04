@@ -1,11 +1,16 @@
 package fluent;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * Created on 26.11.2021 by
@@ -14,141 +19,144 @@ import java.util.function.Predicate;
  */
 public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
 
-    private final ThenClause thenClause = new ThenClause();
+    private final ActionSpace space;
     private Object uplifted;
+    private boolean notBlocked;
+    private boolean notMatched;
 
     public SelectCase(O origin, V value) {
         super(true, origin, value);
+        this.space = new ActionSpace();
+        this.uplifted = null;
+        this.notBlocked = true;
+        this.notMatched = true;
     }
 
     public SelectCase(V value) {
-        super(true, null, value);
+        this(null, value);
     }
 
-    public void setUplifted(Object uplifted) {
-        this.uplifted = uplifted;
-    }
-
-    public O uplift(Object value) {
+    private O uplift(Object value) {
         return Optional.ofNullable(origin)
                 .filter(o -> o instanceof SelectCase)
                 .map(o -> {
-                    ((SelectCase) o).setUplifted(value);
+                    if(actionAllowed) {
+                        ((SelectCase) o).uplifted = value;
+                    }
                     return o;
                 })
-                .orElseThrow(() -> new RuntimeException("Cannot uplift from origin"));
+                .orElseThrow(UpliftNotPossibleException::new);
     }
 
     @SafeVarargs
     private boolean boxedIn(V... values) {
-        return Arrays.asList(values).contains(boxed);
+        boolean boxedIn = Arrays.asList(values).contains(boxed);
+        if(!boxedIn) {
+            notMatched = false; //ToDo вынести в отдельную ф-ю
+        }
+        return boxedIn;
     }
 
     @SafeVarargs
-    public final SelectCase<O, V> when(Consumer<V> consumer, V... values) {
-        return chainWhen(actionAllowed && boxedIn(values),
-                        () -> consumer.accept(boxed));
+    public final ActionSpace when(V... values) {
+        actionAllowed = boxedIn(values);
+        return space;
     }
 
-    @SafeVarargs
-    public final SelectCase<O, V> breakWhen(Consumer<V> consumer, V... values) {
-        return chainWhen(actionAllowed && boxedIn(values),
-                        () -> {
-                            consumer.accept(boxed);
-                            actionAllowed = false;
-                        });
+    public ActionSpace when(Predicate<V> valuePredicate) {
+        actionAllowed = valuePredicate.test(boxed);
+        return space;
     }
 
-    public SelectCase<O, V> whenOther(Consumer<V> consumer) {
-        return chainWhen(actionAllowed, () -> consumer.accept(boxed));
+    public ActionSpace whenNull() {
+        actionAllowed = isNull(boxed);
+        return space;
     }
 
-    public SelectCase<O, V> whenOtherThrow() {
-        return whenOtherThrow(new NoSuchElementException("Actual value doesn't match any of specified by 'when' clauses"));
+    public ActionSpace whenOther() {
+        actionAllowed = notMatched;
+        return space;
     }
 
-    public SelectCase<O, V> whenOtherThrow(RuntimeException e) {
-        return chainWhen(actionAllowed, () -> { throw e; });
+    public ActionSpace whenRange(V startInclusive, V endExclusive) {
+        if(actionAllowed && nonNull(startInclusive)
+                         && nonNull(endExclusive)) {
+            if(boxed instanceof Number) {
+                double actual = ((Number) boxed).doubleValue(),
+                        start = ((Number) startInclusive).doubleValue(),
+                        end = ((Number) endExclusive).doubleValue();
+                actionAllowed = start > end
+                        ? start <= actual && actual < end
+                        : start > actual && actual >= end;
+            }
+            else if(boxed instanceof Comparable) {
+                Comparable actual = (Comparable) boxed,
+                        start = (Comparable) startInclusive,
+                        end = (Comparable) endExclusive;
+                actionAllowed = start.compareTo(end) < 0
+                        ? start.compareTo(actual) <= 0 && actual.compareTo(end) < 0
+                        : start.compareTo(actual) > 0 && actual.compareTo(end) >= 0;
+            }
+        }
+        return space;
     }
 
-    public SelectCase<O, V> whenRange(V startInclusive, V endExclusive, Consumer<V> consumer) {
-        return chainWhen(actionAllowed && boxed instanceof Number,
-                        () -> {
-                            double actual = ((Number) boxed).doubleValue(),
-                                   start = ((Number) startInclusive).doubleValue(),
-                                   end = ((Number) endExclusive).doubleValue();
-                            if(start >= end) {
-                                double buf = start;
-                                start = end;
-                                end = buf;
-                            }
-                            if(start <= actual && actual < end) {
-                                consumer.accept(boxed);
-                            }
-                        });
-    }
-
-    public Object retrieve() {
-        //или value
+    public Object unbox() {
         return uplifted;
     }
 
-    /*public Optional<?> optional() {
+    public Optional<?> optional() {
         return Optional.ofNullable(uplifted);
-    }*/
-
-    @SafeVarargs
-    public final ThenClause when(V... values) {
-        actionAllowed = boxedIn(values); //ToDo? не стоит менять так
-        return thenClause;
     }
 
-    //Еще для boolean + whenRange
-    public ThenClause when(Predicate<V> valuePredicate) {
-        valuePredicate.test(boxed);
-        return thenClause;
-    }
+    public class ActionSpace {
 
-    public final ThenClause whenNull() {
-        return thenClause;
-    }
-
-    public class ThenClause {
-
-        ThenClause() { }
-
-        //Аналог проваливания ветвей в свиче
-        public SelectCase<O, V> pass(Consumer<V> consumer) {
-            return chainWhen(actionAllowed, () -> consumer.accept(boxed));
-        }
-
-        public O passThenBack(Consumer<V> consumer) {
-            consumer.accept(boxed);
-            return uplift(boxed);
-        }
-
-        //Аналог ветви вместе с break
-        public SelectCase<O, V> block(Consumer<V> consumer) {
-            if (actionAllowed) {
-                consumer.accept(boxed);
-            }
-            actionAllowed = false;
-            return SelectCase.this;
-        }
-
-        //Аналог yield
-        public SelectCase<O, V> save(V other) {
-            boxed = other;
-            return SelectCase.this;
-        }
-
-        public O saveThenBack(V other) {
-            return uplift(other);
-        }
+        ActionSpace() { }
 
         public <U> SelectCase<SelectCase<O, V>, U> mapThenSelect(Function<? super V, ? extends U> mapper) {
             return new SelectCase<>(SelectCase.this, mapper.apply(boxed));
         }
 
+        public SelectCase<O, V> pass(Consumer<? super V> consumer) {
+            return chainWhen(actionAllowed, () -> consumer.accept(boxed));
+        }
+
+        public SelectCase<O, V> block(Consumer<? super V> consumer) {
+            return chainWhen(actionAllowed && notBlocked && nonNull(consumer),
+                    () -> {
+                        consumer.accept(boxed);
+                        notBlocked = false;
+                    });
+        }
+
+        public SelectCase<O, V> save(V other) {
+            return chainWhen(actionAllowed && notBlocked, () -> boxed = other);
+        }
+
+        public SelectCase<O, V> save(UnaryOperator<V> op) {
+            return chainWhen(actionAllowed && notBlocked, () -> boxed = op.apply(boxed));
+        }
+
+        public SelectCase<O, V> exception(RuntimeException e) {
+            return chainWhen(actionAllowed && notMatched && notBlocked, () -> { throw e; });
+        }
+
+        public SelectCase<O, V> exception() {
+            return exception(new NoSuchElementException("Actual value doesn't match any of specified by 'when' clauses"));
+        }
+
+        public O blockThenBack(Consumer<V> consumer) {
+            block(consumer);
+            return uplift(boxed);
+        }
+
+        public O passThenBack(Consumer<V> consumer) {
+            pass(consumer);
+            return uplift(boxed);
+        }
+
+        public O saveThenBack(V other) {
+            return uplift(other);
+        }
     }
 }
