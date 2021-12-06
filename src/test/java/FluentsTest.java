@@ -83,12 +83,23 @@ public class FluentsTest {
     @Test
     public void testSelectRange() {
         //Works fine with all numbers
-        Fluent.select(3)
-                .whenRange(1, 8)
-                .pass(System.out::println)
+        Fluent.select(100)
+                .when(100)
+                    .pass(i -> System.out.println("Blocked at 100"))
+                .when(100)
+                    .mapThenSelect(i -> "anv")
+                    .whenRange("abc", "xez")
+                    .blockThenBack(s -> System.out.println("In str range"))
+                .whenRange(1, 901)
+                    .block(System.out::println)
+                .when(100)
+                    .pass(i -> System.out.println("After pass"))
+                .when(100)
+                    .block(i -> System.out.println("After block"))
                 .whenOther()
-                .pass(i -> System.out.println("Other"))
-                .unbox();
+                    .pass(i -> System.out.println("Passed other"))
+                .optional()
+                .ifPresent(System.out::println);
     }
 
     @Test
