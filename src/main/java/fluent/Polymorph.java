@@ -8,25 +8,25 @@ import static java.util.Objects.requireNonNull;
  *
  * @param <O> origin type
  * @param <T> stands for 'this'
- * @param <V> type of value boxed in
+ * @param <V> type of value stored in
  */
 public abstract class Polymorph<O, T extends Polymorph<O, T, V>, V> implements Chaining<T> {
 
     boolean actionAllowed;
     O origin;
-    V boxed;
+    V value;
 
-    public Polymorph(boolean actionAllowed, O origin, V boxed) {
+    public Polymorph(boolean actionAllowed, O origin, V value) {
         this.actionAllowed = actionAllowed;
         this.origin = origin;
-        this.boxed = boxed;
+        this.value = value;
     }
 
-    T rebox(V boxed) {
-        return chain(() -> this.boxed = requireNonNull(boxed));
+    T repack(V boxed) {
+        return chain(() -> this.value = requireNonNull(boxed));
     }
 
     T reboxWhenAllowed(V boxed) {
-        return chainWhen(actionAllowed, () -> this.boxed = requireNonNull(boxed));
+        return chainWhen(actionAllowed, () -> this.value = requireNonNull(boxed));
     }
 }

@@ -20,11 +20,11 @@ public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
     }
 
     public TernaryOp<V> yes(V value) {
-        return swapWhen(actionAllowed, rebox(value));
+        return swapWhen(actionAllowed, repack(value));
     }
 
     public TernaryOp<V> yes(Supplier<V> value) {
-        return swapWhen(actionAllowed, rebox(value.get()));
+        return swapWhen(actionAllowed, repack(value.get()));
     }
 
     public TernaryOp<V> yesThenAsk(boolean condition) {

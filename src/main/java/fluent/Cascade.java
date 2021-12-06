@@ -12,8 +12,8 @@ public abstract class Cascade<T extends Cascade<T, V>, V> extends Polymorph<T, T
 
     BiFunction<Boolean, T, T> expander;
 
-    public Cascade(boolean actionAllowed, T origin, V boxed, BiFunction<Boolean, T, T> expander) {
-        super(actionAllowed, origin, boxed);
+    public Cascade(boolean actionAllowed, T origin, V value, BiFunction<Boolean, T, T> expander) {
+        super(actionAllowed, origin, value);
         this.expander = expander;
     }
 
@@ -22,11 +22,11 @@ public abstract class Cascade<T extends Cascade<T, V>, V> extends Polymorph<T, T
     }
 
     T thenBack(boolean condition, V other) {
-        return swap(origin, o -> o.rebox(condition ? other : boxed));
+        return swap(origin, o -> o.repack(condition ? other : value));
     }
 
     V thenUnbox(boolean condition, V other) {
-        return condition ? other : boxed;
+        return condition ? other : value;
     }
 
     Optional<V> thenOptional(boolean condition, V value) {

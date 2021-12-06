@@ -89,10 +89,10 @@ public class FluentsTest {
                 .when(100)
                     .mapThenSelect(i -> "anv")
                     .whenRange("abc", "xez")
-                    .blockThenBack(s -> System.out.println("In str range"))
+                    .passThenBack(s -> System.out.println("In str range"))
                 .whenRange(1, 901)
-                    .block(System.out::println)
-                .when(100)
+                    .map(i -> "ayyy")
+                .when(5)
                     .pass(i -> System.out.println("After pass"))
                 .when(100)
                     .block(i -> System.out.println("After block"))
@@ -104,11 +104,9 @@ public class FluentsTest {
 
     @Test
     public void testNewSelectCase() {
-        Fluent.select("34")
-                .when("34")
-                .mapThenSelect(Integer::parseInt);
-                    /*.breakWhen(System.out::println, 34)
-                    .whenRange(20, 35, System.out::println);*/
+        Fluent.select(5)
+                .when(6)
+                .throwArgException();
     }
 
     @Test
@@ -123,9 +121,9 @@ public class FluentsTest {
                 .when(9, 11)
                     .mapThenSelect(String::valueOf)
                     .when("3")
-                        .save("ty")
+                        .box("ty")
                     .when("2")
-                        .saveThenBack("saved")
+                        .boxThenBack("saved")
                 /*.optionalBox()
                 .orElseThrow()*/;
         s.toString();

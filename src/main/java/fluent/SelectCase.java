@@ -1,7 +1,6 @@
 package fluent;
 
 import java.util.Arrays;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.*;
 
@@ -16,14 +15,14 @@ import static java.util.Objects.nonNull;
 public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
 
     private final ActionSpace space;
-    private Object uplifted;
+    private Object boxed;
     private boolean notBlocked;
     private boolean notMatched;
 
     public SelectCase(O origin, V value, boolean notBlocked) {
         super(true, origin, value);
         this.space = new ActionSpace();
-        this.uplifted = null;
+        this.boxed = null;
         this.notBlocked = notBlocked;
         this.notMatched = true;
     }
@@ -36,16 +35,6 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
         this(null, value);
     }
 
-    private void match() {
-        if(actionAllowed) {
-            notMatched = false;
-        }
-    }
-
-    private boolean allowed() {
-        return notBlocked && actionAllowed;
-    }
-
     private O uplift(Object value, boolean notBlocked) {
         return Optional.ofNullable(origin)
                 .filter(o -> o instanceof SelectCase)
@@ -55,14 +44,14 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
                         sc.notBlocked = notBlocked;
                     }
                     if(actionAllowed) {
-                        sc.uplifted = value;
+                        sc.boxed = value;
                     }
                     return o;
                 })
                 .orElseThrow(UpliftNotPossibleException::new);
     }
 
-    private ActionSpace toSpace(BooleanSupplier allowanceSupplier) {
+    private ActionSpace swapToSpace(BooleanSupplier allowanceSupplier) {
         actionAllowed = allowanceSupplier.getAsBoolean();
         if(actionAllowed) {
             notMatched = false;
@@ -70,120 +59,124 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
         return space;
     }
 
-    public Object unbox() {
-        return uplifted;
-    }
-
-    public Optional<?> optional() {
-        return Optional.ofNullable(uplifted);
-    }
-
     @SafeVarargs
     public final ActionSpace when(V... values) {
-        actionAllowed = Arrays.asList(values).contains(boxed);
-        match();
-        return space;
+        return swapToSpace(() -> Arrays.asList(values).contains(value));
     }
 
     public ActionSpace when(Predicate<V> valuePredicate) {
-        actionAllowed = valuePredicate.test(boxed);
-        match();
-        return space;
+        return swapToSpace(() -> valuePredicate.test(value));
     }
 
     public ActionSpace whenNull() {
-        actionAllowed = isNull(boxed);
-        return space;
+        return swapToSpace(() -> isNull(value));
     }
 
     public ActionSpace whenOther() {
-        actionAllowed = notMatched;
-        return space;
+        return swapToSpace(() -> notMatched);
     }
 
     public ActionSpace whenRange(V startInclusive, V endExclusive) {
-        if(nonNull(startInclusive) && nonNull(endExclusive)) {
-            if(boxed instanceof Number) {
-                double actual = ((Number) boxed).doubleValue(),
-                        start = ((Number) startInclusive).doubleValue(),
-                        end = ((Number) endExclusive).doubleValue();
-                actionAllowed = start < end
-                        ? start <= actual && actual < end
-                        : start > actual && actual >= end;
+        return swapToSpace(() -> {
+            if(nonNull(startInclusive) && nonNull(endExclusive)) {
+                if(value instanceof Number) {
+                    double actual = ((Number) value).doubleValue(),
+                            start = ((Number) startInclusive).doubleValue(),
+                            end = ((Number) endExclusive).doubleValue();
+                    return start < end
+                            ? start <= actual && actual < end
+                            : start > actual && actual >= end;
+                }
+                else if(value instanceof Comparable) {
+                    Comparable actual = (Comparable) value,
+                            start = (Comparable) startInclusive,
+                            end = (Comparable) endExclusive;
+                    return start.compareTo(end) < 0
+                            ? start.compareTo(actual) <= 0 && actual.compareTo(end) < 0
+                            : start.compareTo(actual) > 0 && actual.compareTo(end) >= 0;
+                }
             }
-            else if(boxed instanceof Comparable) {
-                Comparable actual = (Comparable) boxed,
-                        start = (Comparable) startInclusive,
-                        end = (Comparable) endExclusive;
-                actionAllowed = start.compareTo(end) < 0
-                        ? start.compareTo(actual) <= 0 && actual.compareTo(end) < 0
-                        : start.compareTo(actual) > 0 && actual.compareTo(end) >= 0;
-            }
-            if(actionAllowed) {
-                notMatched = false;
-            }
-        }
-        else {
-            actionAllowed = false;
-        }
-        return space;
+            return false;
+        });
     }
 
     public class ActionSpace {
 
         ActionSpace() { }
 
-        public <U> SelectCase<SelectCase<O, V>, U> mapThenSelect(Function<? super V, ? extends U> mapper) {
-            return new SelectCase<>(SelectCase.this, mapper.apply(boxed), allowed());
+        private <A> boolean allowed(A applier) {
+            return notBlocked && actionAllowed && nonNull(applier);
         }
 
-        public <U> SelectCase<O, V> mapThenSave(Function<? super V, ? extends U> boxMapper) {
-            return chainWhen(allowed(), () -> uplifted = boxMapper.apply(boxed));
+        public SelectCase<O, V> pass(Consumer<? super V> boxConsumer) {
+            return chainWhen(allowed(boxConsumer), () -> boxConsumer.accept(value));
         }
 
-        public SelectCase<O, V> save(V other) {
-            return chainWhen(allowed(), () -> uplifted = other);
+        public O passThenBack(Consumer<? super V> consumer) {
+            pass(consumer);
+            return uplift(boxed, true);
         }
 
-        public SelectCase<O, V> save(UnaryOperator<V> boxOp) {
-            return chainWhen(allowed(), () -> uplifted = boxOp.apply(boxed));
-        }
-
-        public SelectCase<O, V> pass(Consumer<? super V> consumer) {
-            return chainWhen(allowed(), () -> consumer.accept(boxed));
-        }
-
-        public SelectCase<O, V> block(Consumer<? super V> consumer) {
-            return chainWhen(allowed() && nonNull(consumer),
-                            () -> {
-                                consumer.accept(boxed);
-                                notBlocked = false;
-                            });
-        }
-
-        public SelectCase<O, V> exception(RuntimeException e) {
-            return chainWhen(allowed(), () -> {
-                throw e;
+        public SelectCase<O, V> block(Consumer<? super V> boxConsumer) {
+            return chainWhen(allowed(boxConsumer), () -> {
+                boxConsumer.accept(value);
+                notBlocked = false;
             });
         }
 
-        public SelectCase<O, V> exception() {
-            return exception(new NoSuchElementException("Actual value doesn't match any of specified by 'when' clauses"));
+        public O blockThenBack(Consumer<? super V> consumer) {
+            block(consumer);
+            return uplift(boxed, false);
         }
 
-        public O saveThenBack(V other) {
+        public SelectCase<O, V> box(V other) {
+            return chainWhen(allowed(other), () -> boxed = other);
+        }
+
+        public SelectCase<O, V> box(UnaryOperator<V> boxOp) {
+            return chainWhen(allowed(boxOp), () -> boxed = boxOp.apply(value));
+        }
+
+        public O boxThenBack(V other) {
             return uplift(other, true);
         }
 
-        public O passThenBack(Consumer<V> consumer) {
-            pass(consumer);
-            return uplift(uplifted, true);
+        public O boxThenBack(UnaryOperator<V> otherOp) {
+            return uplift(nonNull(otherOp) ? otherOp.apply(value) : boxed, true);
         }
 
-        public O blockThenBack(Consumer<V> consumer) {
-            block(consumer);
-            return uplift(uplifted, false);
+        public <U> SelectCase<O, V> map(Function<? super V, ? extends U> boxMapper) {
+            return chainWhen(allowed(boxMapper), () -> boxed = boxMapper.apply(value));
         }
+
+        public <U> SelectCase<SelectCase<O, V>, U> mapThenSelect(Function<? super V, ? extends U> boxMapper) {
+            return new SelectCase<>(SelectCase.this, boxMapper.apply(value), allowed(boxMapper));
+        }
+
+        public <U> O mapThenBack(Function<? super V, ? extends U> boxMapper) {
+            map(boxMapper);
+            return uplift(boxed, true);
+        }
+
+        public SelectCase<O, V> throwUnchecked(Supplier<? extends RuntimeException> eSupplier) {
+            return chainWhen(allowed(eSupplier), () -> { throw eSupplier.get(); });
+        }
+
+        public SelectCase<O, V> throwUnchecked(RuntimeException e) {
+            return chainWhen(allowed(e), () -> { throw e; });
+        }
+
+        public SelectCase<O, V> throwArgException() {
+            return throwUnchecked(new IllegalArgumentException("Unsatisfied value [" + value + "] passing through select-case"));
+        }
+    }
+
+    public Object unbox() {
+        return boxed;
+    }
+
+    public Optional<?> optional() {
+        return Optional.ofNullable(boxed);
     }
 
 }
