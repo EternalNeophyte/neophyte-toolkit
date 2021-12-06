@@ -108,24 +108,24 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
             return notBlocked && actionAllowed && nonNull(applier);
         }
 
-        public SelectCase<O, V> pass(Consumer<? super V> boxConsumer) {
-            return chainWhen(allowed(boxConsumer), () -> boxConsumer.accept(value));
+        public SelectCase<O, V> pass(Consumer<? super V> passConsumer) {
+            return chainWhen(allowed(passConsumer), () -> passConsumer.accept(value));
         }
 
-        public O passThenBack(Consumer<? super V> consumer) {
-            pass(consumer);
+        public O passThenBack(Consumer<? super V> passConsumer) {
+            pass(passConsumer);
             return uplift(boxed, true);
         }
 
-        public SelectCase<O, V> block(Consumer<? super V> boxConsumer) {
-            return chainWhen(allowed(boxConsumer), () -> {
-                boxConsumer.accept(value);
+        public SelectCase<O, V> block(Consumer<? super V> blockConsumer) {
+            return chainWhen(allowed(blockConsumer), () -> {
+                blockConsumer.accept(value);
                 notBlocked = false;
             });
         }
 
-        public O blockThenBack(Consumer<? super V> consumer) {
-            block(consumer);
+        public O blockThenBack(Consumer<? super V> blockConsumer) {
+            block(blockConsumer);
             return uplift(boxed, false);
         }
 
@@ -141,8 +141,8 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
             return uplift(other, true);
         }
 
-        public O boxThenBack(UnaryOperator<V> otherOp) {
-            return uplift(nonNull(otherOp) ? otherOp.apply(value) : boxed, true);
+        public O boxThenBack(UnaryOperator<V> boxOp) {
+            return uplift(nonNull(boxOp) ? boxOp.apply(value) : boxed, true);
         }
 
         public <U> SelectCase<O, V> map(Function<? super V, ? extends U> boxMapper) {
