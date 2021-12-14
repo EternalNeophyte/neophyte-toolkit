@@ -19,7 +19,7 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
     private boolean notBlocked;
     private boolean notMatched;
 
-    public SelectCase(O origin, V value, boolean notBlocked) {
+    SelectCase(O origin, V value, boolean notBlocked) {
         super(true, origin, value);
         this.space = new ActionSpace();
         this.boxed = null;
@@ -27,11 +27,11 @@ public class SelectCase<O, V> extends Polymorph<O, SelectCase<O, V>, V> {
         this.notMatched = true;
     }
 
-    public SelectCase(O origin, V value) {
+    SelectCase(O origin, V value) {
         this(origin, value, true);
     }
 
-    public SelectCase(V value) {
+    SelectCase(V value) {
         this(null, value);
     }
 

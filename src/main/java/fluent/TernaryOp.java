@@ -43,12 +43,12 @@ public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
         return thenBack(actionAllowed, value.get());
     }
 
-    public V yesThenUnbox(V value) {
-        return thenUnbox(actionAllowed, value);
+    public V yesThenYield(V value) {
+        return thenYield(actionAllowed, value);
     }
 
-    public V yesThenUnbox(Supplier<V> value) {
-        return thenUnbox(actionAllowed, value.get());
+    public V yesThenYield(Supplier<V> value) {
+        return thenYield(actionAllowed, value.get());
     }
 
     public Optional<V> yesThenOptional(V value) {
@@ -60,11 +60,11 @@ public class TernaryOp<V> extends Cascade<TernaryOp<V>, V> {
     }
 
     public V no(V value) {
-        return thenUnbox(!actionAllowed, value);
+        return thenYield(!actionAllowed, value);
     }
 
     public V no(Supplier<V> value) {
-        return thenUnbox(!actionAllowed, value.get());
+        return thenYield(!actionAllowed, value.get());
     }
 
     public TernaryOp<V> noThenAsk(boolean condition) {

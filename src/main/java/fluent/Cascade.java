@@ -25,12 +25,12 @@ public abstract class Cascade<T extends Cascade<T, V>, V> extends Polymorph<T, T
         return swap(origin, o -> o.repack(condition ? other : value));
     }
 
-    V thenUnbox(boolean condition, V other) {
+    V thenYield(boolean condition, V other) {
         return condition ? other : value;
     }
 
     Optional<V> thenOptional(boolean condition, V value) {
-        return Optional.ofNullable(thenUnbox(condition, value));
+        return Optional.ofNullable(thenYield(condition, value));
     }
 
 }
